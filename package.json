@@ -10,11 +10,13 @@
     "antd": "^4.19.3",
     "axios": "^0.26.1",
     "formik": "^2.2.9",
+    "moment": "^2.29.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-redux": "^7.2.6",
     "react-scripts": "5.0.0",
     "redux": "^4.1.2",
+    "redux-saga": "^1.2.1",
     "web-vitals": "^2.1.4",
     "yup": "^0.32.11"
   },

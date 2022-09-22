@@ -13,6 +13,8 @@ const styles = {
         gridGap: 10,
         textAlign: 'left',
         justifyContent: 'start',
+        marginBottom: 15,
+        cursor: 'pointer'
     },
     textHeader: {
         fontSize: 30
@@ -21,6 +23,12 @@ const styles = {
         fontSize: 20,
         marginBottom: 10
     },
+    wrapperInput: {
+        marginBottom: 10,
+        display: 'grid',
+        gridTemplateColumns: '2fr 1fr',
+        gridGap: 10
+    }
 }
 
 export default styles

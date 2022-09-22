@@ -1,80 +1,127 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 //Redux
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 //Component
-import { Div, Text } from '../../component/Core-ui'
-import { Button } from 'antd'
+import { Div, Text } from 'component/Core-ui'
+import { Button, Input, Select, DatePicker } from 'antd'
 //Function
-import { getData } from '../../helper/request'
-import { addData } from '../../redux/slices/data'
-import { changeSelectedItem, openModal } from '../../redux/slices/modal'
-import { sortAscending, sortDescending } from '../../helper/sorting'
+import { getData } from 'redux/slices/todo'
+import { changeItem, openModal } from 'redux/slices/modal'
 //Style
-import Styles from './styles'
+import styles from './styles'
+
+const { Option } = Select
 
 function Home() {
+    const dispatch = useDispatch();
     const state = useSelector(state => state)
+    useEffect(() => dispatch(getData()), [dispatch])
     const { data } = state
     const { dataTodo } = data
+    const [search, setSearch] = useState({
+        activeFilter: null,
+        completedFilter: null,
+        categoryActive: null,
+        categoryCompleted: null
+    })
+    const { activeFilter, completedFilter, categoryActive, categoryCompleted } = search
+    const setFilter = (field, value) => setSearch((state) => ({
+        ...state,
+        [field]: value
+    }))
 
-    const callData = async () => {
-        const response = await getData()
-        addData(response)
-    }
+    const filterByString = (arr, string, category) => arr.filter((item) => item[category].toLowerCase().includes(string.toLowerCase()))
 
-    useEffect(() => {
-        callData()
-    }, [])
-
-    //still need to fix sort by date
     const activeTodo = useMemo(() => {
-        const result = dataTodo.filter(({ status }) => !status)
-        const sortDesc = sortDescending(result)
-        return sortDesc
-    }, [dataTodo])
+        const filterByActive = dataTodo.filter(({ status }) => !status)
+        if (activeFilter) {
+            return filterByString(filterByActive, activeFilter, (categoryActive || 'title'))
+        } else {
+            return filterByActive
+        }
+    }, [dataTodo, activeFilter, categoryActive])
 
     const completedTodo = useMemo(() => {
-        const result = dataTodo.filter(({ status }) => status)
-        const sortAsc = sortAscending(result)
-        return sortAsc
-    }, [dataTodo])
+        const filterByCompleted = dataTodo.filter(({ status }) => status)
+        if (completedFilter) {
+            return filterByString(filterByCompleted, completedFilter, (categoryCompleted || 'title'))
+        } else {
+            return filterByCompleted
+        }
+    }, [dataTodo, completedFilter, categoryCompleted])
 
     const setSelectedItem = (id) => {
         const result = dataTodo.find((item) => item.id === id)
-        changeSelectedItem(result)
-        return result
+        dispatch(changeItem(result))
     }
 
-    const listItem = useMemo(() => {
-        const mapItem = [
-            {
-                title: 'Active Todo',
-                data: activeTodo,
-            },
-            {
-                title: 'Completed Todo',
-                data: completedTodo,
-            }
-        ]
-        return mapItem
-    }, [activeTodo, completedTodo])
+    const listItem = useMemo(() => [
+        {
+            title: 'Active Todo',
+            data: activeTodo,
+            placeholder: 'Active todo search',
+            keyFilter: 'activeFilter',
+            keyCategory: 'categoryActive'
+        },
+        {
+            title: 'Completed Todo',
+            data: completedTodo,
+            placeholder: 'Completed todo search',
+            keyFilter: 'completedFilter',
+            keyCategory: 'categoryCompleted'
+        }
+    ], [activeTodo, completedTodo])
 
+    const listCategory = [
+        {
+            key: 'title',
+            title: 'Title'
+        },
+        {
+            key: 'description',
+            title: 'Description'
+        },
+        {
+            key: 'createdAt',
+            title: 'Created at'
+        },
+    ]
     return (
         <Div>
-            <Text style={Styles.textHeader}>To do list</Text>
-            <Div style={Styles.root}>
-                {listItem.map(({ title, data }, index) => (
+            <Text style={styles.textHeader}>To Do</Text>
+            <Div style={styles.root}>
+                {listItem.map(({ title, data, placeholder, keyFilter, keyCategory }, index) => (
                     <Div key={index}>
-                        <Text style={Styles.textColumn}>{title}</Text>
+                        <Text style={styles.textColumn}>{title}</Text>
+                        <Div style={styles.wrapperInput}>
+                            {search[keyCategory] === 'createdAt' ? (
+                                <DatePicker onChange={(_, dateString) => setFilter(keyFilter, dateString)} />
+                            ) : (
+                                <Input
+                                    placeholder={placeholder}
+                                    onChange={(e) => setFilter(keyFilter, e.target.value)}
+                                    value={search[keyFilter]}
+                                />
+                            )}
+                            <Select
+                                onChange={(value) => setFilter(keyCategory, value)}
+                                value={search[keyCategory]}
+                                placeholder="Select category"
+                            >
+                                {listCategory.map(({ key, title }, i) => (
+                                    <Option key={i} value={key}>{title}</Option>
+                                ))}
+                            </Select>
+                        </Div>
                         {data.map(({ id, title }, i) => (
-                            <Div key={i} onClick={() => setSelectedItem(id)} style={Styles.columns}>
+                            <Div key={i} onClick={() => setSelectedItem(id)} style={styles.columns}>
                                 <Text link={true}>{title}</Text>
                             </Div>
                         ))}
                     </Div>
                 ))}
             </Div>
-            <Button onClick={() => openModal()}>Add Todo</Button>
+            <Button onClick={() => dispatch(openModal())}>Add Todo</Button>
         </Div>
     )
 }

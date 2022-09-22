@@ -1,10 +1,11 @@
 import { Div, Text } from './Core-ui';
 import { Modal, Button, Input, Radio } from 'antd';
 import { Formik } from 'formik';
+import moment from 'moment';
 import { object, string, number } from 'yup';
-import { useSelector } from 'react-redux'
-import { closeModal } from '../redux/slices/modal'
-import { removeData, updateData, addData } from '../redux/slices/data'
+import { useSelector, useDispatch } from 'react-redux'
+import { closeModal } from 'redux/slices/modal'
+import { removeData, updateData, addData } from 'redux/slices/todo'
 
 const { Group, Button: RadioButton } = Radio
 
@@ -14,12 +15,13 @@ const validationSchema = object().shape({
 })
 
 function CustomizeModal() {
+    const dispatch = useDispatch()
     const { modal } = useSelector(state => state)
     const { selectedItem, open } = modal
     const isEditing = Boolean(selectedItem)
     const deleteTodo = (id) => {
-        removeData(id)
-        closeModal()
+        dispatch(removeData(id))
+        dispatch(closeModal())
     }
     return (
         <Formik
@@ -36,14 +38,14 @@ function CustomizeModal() {
                         ...selectedItem,
                         ...values,
                     }
-                    updateData(newSelectedItem)
+                    dispatch(updateData(newSelectedItem))
                 } else {
-                    addData([{
+                    dispatch(addData([{
                         ...values,
-                        createdAt: new Date().getTime(),
-                    }])
+                        createdAt: moment().format('YYYY-MM-DD hh:mm'),
+                    }]))
                 }
-                closeModal()
+                dispatch(closeModal())
                 resetForm()
             }}
         >
@@ -53,7 +55,7 @@ function CustomizeModal() {
                     <Modal
                         title={isEditing ? 'Edit Todo' : 'Add Todo'}
                         visible={open}
-                        onCancel={() => closeModal()}
+                        onCancel={() => dispatch(closeModal())}
                         footer={[
                             <Button key="delete" type='danger' onClick={() => deleteTodo(selectedItem?.id)}>
                                 {isEditing && selectedItem?.status !== 1 && (
